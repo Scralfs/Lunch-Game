@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en-GB"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lunch Brain</title>
+<style>
+:root{--bg:#14161a;--card:#1f2329;--ink:#eef0f3;--mut:#8b93a0;--acc:#4ade80;--bad:#f87171;--sel:#60a5fa}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,sans-serif;display:flex;justify-content:center}
+main{width:100%;max-width:440px;padding:16px}
+h1{font-size:20px;margin:4px 0 12px}
+nav{display:flex;gap:8px;margin-bottom:16px}
+nav button,.btn{flex:1;padding:12px;border:0;border-radius:10px;background:var(--card);color:var(--ink);font-size:16px}
+nav button.on{background:var(--acc);color:#000;font-weight:600}
+.stats{display:flex;justify-content:space-between;color:var(--mut);font-size:14px;margin-bottom:12px}
+.row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.tile{padding:22px 0;border-radius:12px;background:var(--card);color:var(--ink);border:2px solid transparent;font-size:26px;font-weight:600}
+.tile.sel{border-color:var(--sel)}
+.op{padding:16px 0;font-size:24px}
+.msg{min-height:24px;text-align:center;margin:10px 0;font-size:16px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.cell{aspect-ratio:1;border-radius:14px;background:var(--card);border:0}
+.cell.lit{background:var(--acc)}
+.cell.wrong{background:var(--bad)}
+.hide{display:none}
+</style></head><body><main>
+<h1>Lunch Brain</h1>
+<nav><button id="t24" class="on">Make 24</button><button id="tseq">Sequence</button></nav>
+
+<section id="g24">
+  <div class="stats"><span id="s24">Solved: 0</span><span id="b24"></span></div>
+  <div class="row" id="tiles"></div>
+  <div class="row" id="ops"></div>
+  <div class="msg" id="m24">Combine all four numbers to make 24.</div>
+  <div style="display:flex;gap:8px">
+    <button class="btn" id="undo">Undo</button>
+    <button class="btn" id="skip">Skip</button>
+    <button class="btn" id="hint">Reveal</button>
+  </div>
+</section>
+
+<section id="gseq" class="hide">
+  <div class="stats"><span id="sq">Level: 0</span><span id="bq"></span></div>
+  <div class="grid" id="grid"></div>
+  <div class="msg" id="mq">Watch the pattern, then repeat it.</div>
+  <button class="btn" id="start" style="width:100%">Start</button>
+</section>
+
+<script>
+const $=id=>document.getElementById(id);
+function load(k){try{return +localStorage.getItem(k)||0}catch(e){return 0}}
+function save(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+
+/* ---------- tabs ---------- */
+$('t24').onclick=()=>tab(true);$('tseq').onclick=()=>tab(false);
+function tab(a){$('g24').classList.toggle('hide',!a);$('gseq').classList.toggle('hide',a);
+  $('t24').classList.toggle('on',a);$('tseq').classList.toggle('on',!a)}
+
+/* ---------- Make 24 ---------- */
+const OPS=['+','−','×','÷'];
+function apply(a,o,b){return o=='+'?a+b:o=='−'?a-b:o=='×'?a*b:(b===0?NaN:a/b)}
+function solve(nums){ // returns expression string or null
+  const go=l=>{
+    if(l.length==1)return Math.abs(l[0].v-24)<1e-6?l[0].e:null;
+    for(let i=0;i<l.length;i++)for(let j=0;j<l.length;j++){if(i==j)continue;
+      const rest=l.filter((_,k)=>k!=i&&k!=j);
+      for(const o of OPS){const v=apply(l[i].v,o,l[j].v);if(!isFinite(v))continue;
+        const r=go([...rest,{v,e:'('+l[i].e+o+l[j].e+')'}]);if(r)return r}}
+    return null};
+  return go(nums.map(n=>({v:n,e:''+n})));
+}
+let tiles=[],hist=[],selA=null,selOp=null,solved=load('solved24'),orig=[];
+function newPuzzle(){
+  let n;do{n=[0,0,0,0].map(()=>1+Math.floor(Math.random()*9))}while(!solve(n));
+  orig=n;tiles=n.map(v=>({v}));hist=[];selA=null;selOp=null;
+  $('m24').textContent='Combine all four numbers to make 24.';draw24();
+}
+function fmt(v){return Number.isInteger(v)?v:(Math.round(v*100)/100)}
+function draw24(){
+  $('s24').textContent='Solved: '+solved;
+  $('b24').textContent='Total ever: '+load('solved24');
+  const t=$('tiles');t.innerHTML='';
+  tiles.forEach((x,i)=>{const b=document.createElement('button');b.className='tile'+(selA===i?' sel':'');
+    b.textContent=fmt(x.v);b.onclick=()=>pickTile(i);t.appendChild(b)});
+  t.style.gridTemplateColumns='repeat('+tiles.length+',1fr)';
+  const o=$('ops');o.innerHTML='';
+  OPS.forEach(s=>{const b=document.createElement('button');b.className='tile op'+(selOp===s?' sel':'');
+    b.textContent=s;b.onclick=()=>{if(selA!==null){selOp=s;draw24()}};o.appendChild(b)});
+}
+function pickTile(i){
+  if(selA===null){selA=i;draw24();return}
+  if(selA===i){selA=null;selOp=null;draw24();return}
+  if(!selOp){selA=i;draw24();return}
+  const v=apply(tiles[selA].v,selOp,tiles[i].v);
+  if(!isFinite(v)){$('m24').textContent='Cannot divide by zero.';return}
+  hist.push(tiles.map(x=>({...x})));
+  const keep=tiles.filter((_,k)=>k!=selA&&k!=i);keep.push({v});
+  tiles=keep;selA=null;selOp=null;draw24();
+  if(tiles.length==1){
+    if(Math.abs(tiles[0].v-24)<1e-6){solved++;save('solved24',load('solved24')+1);
+      $('m24').textContent='24! Nicely done.';draw24();setTimeout(newPuzzle,1200)}
+    else $('m24').textContent='Got '+fmt(tiles[0].v)+'. Undo and try again.';
+  }
+}
+$('undo').onclick=()=>{if(hist.length){tiles=hist.pop();selA=null;selOp=null;
+  $('m24').textContent='Combine all four numbers to make 24.';draw24()}};
+$('skip').onclick=newPuzzle;
+$('hint').onclick=()=>{$('m24').textContent='One solution: '+solve(orig).replace(/^\((.*)\)$/,'$1')};
+newPuzzle();
+
+/* ---------- Sequence ---------- */
+let seq=[],pos=0,busy=false,level=0;
+const grid=$('grid'),cells=[];
+for(let i=0;i<9;i++){const c=document.createElement('button');c.className='cell';
+  c.onclick=()=>tap(i);grid.appendChild(c);cells.push(c)}
+$('bq').textContent='Best: '+load('bestSeq');
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+async function flash(i,cls='lit',ms=450){cells[i].classList.add(cls);await wait(ms);cells[i].classList.remove(cls);await wait(150)}
+async function play(){
+  busy=true;pos=0;$('mq').textContent='Watch...';await wait(500);
+  for(const i of seq)await flash(i);
+  busy=false;$('mq').textContent='Your turn.';
+}
+$('start').onclick=()=>{if(busy)return;seq=[];level=0;next()};
+function next(){seq.push(Math.floor(Math.random()*9));level=seq.length-1;
+  $('sq').textContent='Level: '+level;play()}
+async function tap(i){
+  if(busy||!seq.length)return;
+  if(i===seq[pos]){flash(i,'lit',200);pos++;
+    if(pos===seq.length){busy=true;level=seq.length;$('sq').textContent='Level: '+level;
+      if(level>load('bestSeq')){save('bestSeq',level);$('bq').textContent='Best: '+level}
+      $('mq').textContent='Correct!';await wait(800);next()}}
+  else{busy=true;flash(i,'wrong',500);
+    $('mq').textContent='Missed. You reached level '+(seq.length-1)+'. Press Start to retry.';
+    seq=[];await wait(600);busy=false}
+}
+</script></main></body></html>
