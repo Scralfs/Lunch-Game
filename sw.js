@@ -1,5 +1,5 @@
 /* Offline support: cache everything on install. Bump VERSION when adding or removing files. */
-const VERSION = 'lunchbox-v1';
+const VERSION = 'lunchbox-v2';
 const FILES = [
   './',
   'index.html',
@@ -8,6 +8,7 @@ const FILES = [
   'js/core.js',
   'js/app.js',
   'js/games/colour-clash.js',
+  'js/games/crowns.js',
   'js/games/make-24.js',
   'js/games/memory-match.js',
   'js/games/missing-vowels.js',
@@ -18,8 +19,10 @@ const FILES = [
   'js/games/pattern-recall.js',
   'js/games/quick-maths.js',
   'js/games/reaction.js',
+  'js/games/sun-moon.js',
   'js/games/sudoku.js',
   'js/games/target-number.js',
+  'js/games/word-climb.js',
   'js/games/word-scramble.js',
   'icons/icon.svg',
   'icons/icon-192.png',

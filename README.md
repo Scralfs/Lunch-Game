@@ -3,7 +3,7 @@
 Bite-sized brain training for your lunch break. Installable on your phone and works fully offline.
 No build step, no frameworks, no tracking – your scores are saved only on your device.
 
-## Games (14)
+## Games (17)
 
 | Skill | Game | What it is |
 |---|---|---|
@@ -19,7 +19,10 @@ No build step, no frameworks, no tracking – your scores are saved only on your
 | 🎯 Focus | **Odd One Out** | Spot the slightly different shade |
 | 🔤 Words | **Word Scramble** | Unjumble the letters |
 | 🔤 Words | **Missing Vowels** | Only Connect-style: rebuild answers with the vowels removed |
+| 🔤 Words | **Word Climb** | Solve clues for four-letter words, order them into a word ladder, then unlock the top and bottom rungs |
 | 🧩 Logic | **Sudoku** | Freshly generated 9×9 puzzles (Easy / Medium / Hard) with notes |
+| 🧩 Logic | **Crowns** | One crown per row, column and coloured region, none touching (6×6 / 7×7 / 8×8, always one solution) |
+| 🧩 Logic | **Sun & Moon** | Balance suns and moons with = and × clues (Easy / Hard, always one solution) |
 | ⚡ Speed | **Reflex** | Reaction-time test |
 
 Platform features: daily "lunch menu" of three games (starter, main, pudding), day streak and weekly tracker,
