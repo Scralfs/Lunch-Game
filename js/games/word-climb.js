@@ -197,7 +197,7 @@
     trains: ['Vocabulary', 'General knowledge', 'Sequencing'],
     howTo: [
       'Solve the five clues – every answer is a four-letter word.',
-      'Then use ▲ ▼ to put them in order so each word changes just one letter from the next.',
+      'Then drag the rows (grab the ⠿ handle or anywhere on the row) into order so each word changes just one letter from the next.',
       'That unlocks the top and bottom rungs. Solve them to finish.',
       'Hints reveal a letter but add 10 seconds. Fastest time wins.',
     ],
@@ -270,23 +270,28 @@
         }
         const clue = el('div', { style: 'flex:1;min-width:0;font-size:13px;line-height:1.25;color:' + (locked ? 'var(--muted)' : 'var(--text)'),
           text: locked ? '🔒 Unlocks when the ladder is in order' : item.clue });
-        const row = el('div', { style: 'display:flex;align-items:center;gap:10px;padding:4px 8px;min-height:46px;border-radius:12px;background:' + (item.end ? 'transparent' : 'var(--bg-2)') + ';border:1px solid var(--line)' }, [boxes, clue]);
-        if (opts && opts.move) {
-          const btn = (t, d) => el('button', { text: t, style: 'width:32px;height:30px;border-radius:8px;background:var(--card-2);font-size:13px', onclick: (e) => { e.stopPropagation(); move(opts.i, d); } });
-          row.append(el('div', { style: 'display:flex;flex-direction:row;gap:4px' }, [btn('▲', -1), btn('▼', 1)]));
+        const row = el('div', { style: 'position:relative;display:flex;align-items:center;gap:10px;padding:4px 8px;min-height:46px;border-radius:12px;background:' + (item.end ? 'transparent' : 'var(--bg-2)') + ';border:1px solid var(--line)' }, [boxes, clue]);
+        if (opts && opts.drag) {
+          // Whole row is the drag target; touch-action:none stops the page scrolling mid-drag.
+          row.style.touchAction = 'none';
+          row.style.cursor = 'grab';
+          row.append(el('div', { text: '⠿', style: 'font-size:22px;color:var(--muted);padding:0 4px;flex:none' }));
+          row.addEventListener('pointerdown', (e) => startDrag(opts.i, row, e));
         }
         row.addEventListener('click', () => { if (!locked && !item.solved) { selected = item; api.sfx('tap'); draw(); } });
         return row;
       }
 
+      let midRows = [];
       function draw() {
         list.innerHTML = '';
         list.append(rowEl(top));
-        middle.forEach((m, i) => list.append(rowEl(m, phase === 'order' ? { move: true, i } : null)));
+        midRows = middle.map((m, i) => rowEl(m, phase === 'order' ? { drag: true, i } : null));
+        list.append(...midRows);
         list.append(rowEl(bottom));
         const msgs = {
           solve: 'Solve the clues – tap a row to choose it',
-          order: 'Now order them: each word changes one letter from the next',
+          order: 'Now drag them into order: each word changes one letter from the next',
           locked: 'Ladder complete! ✓',
           ends: 'Top and bottom unlocked – finish the climb!',
         };
@@ -345,13 +350,48 @@
         return middle.every((m, i) => i === 0 || oneApart(middle[i - 1].word, m.word));
       }
 
-      function move(i, d) {
-        const j = i + d;
-        if (j < 0 || j >= middle.length) return;
-        [middle[i], middle[j]] = [middle[j], middle[i]];
+      // Drag a middle row up or down; the others slide out of the way, then the order is committed on release.
+      function startDrag(i, row, e) {
+        if (phase !== 'order' || (e.button != null && e.button > 0)) return;
+        e.preventDefault();
+        const startY = e.clientY;
+        const shift = row.offsetHeight + 6; // row height + list gap
+        const centres = midRows.map((r) => r.offsetTop + r.offsetHeight / 2);
+        let target = i;
+        try { row.setPointerCapture(e.pointerId); } catch (err) { /* synthetic events */ }
+        row.style.zIndex = '5';
+        row.style.boxShadow = 'var(--shadow)';
+        row.style.cursor = 'grabbing';
+        midRows.forEach((r) => { if (r !== row) r.style.transition = 'transform .15s ease'; });
         api.sfx('tap');
-        if (isLadder()) { phase = 'locked'; api.after(unlock, 600); }
-        draw();
+
+        const onMove = (ev) => {
+          const dy = ev.clientY - startY;
+          row.style.transform = 'translateY(' + dy + 'px) scale(1.02)';
+          const centre = centres[i] + dy;
+          target = centres.filter((c, k) => k !== i && c < centre).length;
+          midRows.forEach((r, k) => {
+            if (r === row) return;
+            let off = 0;
+            if (i < target && k > i && k <= target) off = -shift;
+            if (i > target && k < i && k >= target) off = shift;
+            r.style.transform = off ? 'translateY(' + off + 'px)' : '';
+          });
+        };
+        const onUp = () => {
+          row.removeEventListener('pointermove', onMove);
+          row.removeEventListener('pointerup', onUp);
+          row.removeEventListener('pointercancel', onUp);
+          if (!api.alive) return;
+          const [m] = middle.splice(i, 1);
+          middle.splice(target, 0, m);
+          if (target !== i) api.sfx('tap');
+          if (isLadder()) { phase = 'locked'; api.after(unlock, 600); }
+          draw();
+        };
+        row.addEventListener('pointermove', onMove);
+        row.addEventListener('pointerup', onUp);
+        row.addEventListener('pointercancel', onUp);
       }
 
       function unlock() {

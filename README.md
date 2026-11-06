@@ -3,7 +3,7 @@
 Bite-sized brain training for your lunch break. Installable on your phone and works fully offline.
 No build step, no frameworks, no tracking – your scores are saved only on your device.
 
-## Games (17)
+## Games (21)
 
 | Skill | Game | What it is |
 |---|---|---|
@@ -17,13 +17,17 @@ No build step, no frameworks, no tracking – your scores are saved only on your
 | 🎯 Focus | **Colour Clash** | Stroop test – name the ink, not the word |
 | 🎯 Focus | **Number Hunt** | Find 1–25 in a scrambled grid as fast as you can |
 | 🎯 Focus | **Odd One Out** | Spot the slightly different shade |
+| 🎯 Focus | **Spin Match** | Mental rotation: is it the same shape turned round, or a mirror image? |
 | 🔤 Words | **Word Scramble** | Unjumble the letters |
-| 🔤 Words | **Missing Vowels** | Only Connect-style: rebuild answers with the vowels removed |
-| 🔤 Words | **Word Climb** | Solve clues for four-letter words, order them into a word ladder, then unlock the top and bottom rungs |
+| 🔤 Words | **Missing Vowels** | Rebuild answers with the vowels removed (gaps at word breaks, or moved around Only Connect-style) |
+| 🔤 Words | **Word Climb** | Solve clues for four-letter words, drag them into a word ladder, then unlock the top and bottom rungs |
 | 🧩 Logic | **Sudoku** | Freshly generated 9×9 puzzles (Easy / Medium / Hard) with notes |
 | 🧩 Logic | **Crowns** | One crown per row, column and coloured region, none touching (6×6 / 7×7 / 8×8, always one solution) |
+| 🧩 Logic | **Picture Grid** | Nonograms: shade squares to match the number clues (5×5 / 8×8 / 10×10, solvable without guessing) |
+| 🧩 Logic | **Code Breaker** | Crack a hidden 4-peg colour code in 10 guesses (no repeats / repeats) |
 | 🧩 Logic | **Sun & Moon** | Balance suns and moons with = and × clues (Easy / Hard, always one solution) |
 | ⚡ Speed | **Reflex** | Reaction-time test |
+| ⚡ Speed | **Green Light** | Tap the green circles, leave the red ones alone |
 
 Platform features: daily "lunch menu" of three games (starter, main, pudding), day streak and weekly tracker,
 personal bests per game and mode, stats with a 7-day chart and "brain balance", light/dark theme, sound and vibration toggles.

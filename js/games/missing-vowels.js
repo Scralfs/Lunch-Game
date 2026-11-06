@@ -6,10 +6,13 @@ LB.register({
   blurb: 'Rebuild words with the vowels removed',
   trains: ['Verbal fluency', 'Pattern recognition', 'General knowledge'],
   howTo: [
-    'You get a category and some consonants, e.g. “Animals: HD GHG”.',
-    'The vowels have been removed and the spaces moved around.',
+    'You get a category and the answer with its vowels removed, e.g. “British food: TD N TH HL”.',
+    'Word breaks: gaps sit where the real words split.',
+    'Only Connect: as on the TV show, the gaps are moved around to throw you off.',
     'Type the full answer and press Enter. Pass if you are stuck. 90 seconds.',
   ],
+  modes: [{ id: 'words', label: 'Word breaks' }, { id: 'classic', label: 'Only Connect' }],
+  defaultMode: 'words',
   scoreLabel: 'answers',
 
   start(api) {
@@ -32,6 +35,9 @@ LB.register({
     let idx = -1, solved = 0, passed = 0, over = false, busy = false;
 
     function clue(answer) {
+      // Word breaks: keep each word's consonants together, split where the words split.
+      if (api.mode !== 'classic') return answer.split(' ').map(strip).filter(Boolean).join(' ');
+      // Only Connect: ignore the real breaks and regroup into random chunks.
       const letters = strip(answer);
       const parts = [];
       let i = 0;

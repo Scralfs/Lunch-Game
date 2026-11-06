@@ -313,7 +313,7 @@
   /* ---------- Sheets ---------- */
   function openSheet(children) {
     sheetCard.innerHTML = '';
-    sheetCard.append(...children);
+    sheetCard.append(...children.filter((c) => c != null)); // optional parts are passed as null
     sheet.hidden = false;
   }
   function closeSheet() { sheet.hidden = true; sheetCard.innerHTML = ''; }
@@ -513,6 +513,14 @@
       LB.save();
     }
   } catch (e) { /* storage blocked */ }
+
+  /* ---------- Missing Vowels gained modes: old scores used Only Connect spacing ---------- */
+  const mv = LB.state.games['missing-vowels'];
+  if (mv && mv.best && mv.best._ != null) {
+    if (mv.best.classic == null) mv.best.classic = mv.best._;
+    delete mv.best._;
+    LB.save();
+  }
 
   applyTheme();
   render();
