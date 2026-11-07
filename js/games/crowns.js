@@ -124,6 +124,7 @@
       'Place one 👑 in every row, every column and every coloured region.',
       'Crowns cannot touch each other – not even diagonally.',
       'Tap once to mark ✕ (a square you have ruled out), twice for a crown, three times to clear.',
+      'Drag your finger across squares to mark lots of ✕ at once. Start a drag on a ✕ to rub them out instead.',
       'Every puzzle has exactly one solution. Fastest time wins.',
     ],
     modes: [{ id: '6', label: '6×6' }, { id: '7', label: '7×7' }, { id: '8', label: '8×8' }],
@@ -146,19 +147,62 @@
       for (let i = 0; i < n * n; i++) {
         const r = Math.floor(i / n), c = i % n, reg = puzzle.region[i];
         const thick = '2px solid #222', thin = '1px solid rgba(0,0,0,.18)';
-        const b = el('button', { style: 'aspect-ratio:1;display:grid;place-items:center;padding:0;color:#222;font-size:' + (n > 7 ? 20 : 24) + 'px;font-weight:800;'
+        const b = el('button', { 'data-i': i, style: 'aspect-ratio:1;display:grid;place-items:center;padding:0;color:#222;font-size:' + (n > 7 ? 20 : 24) + 'px;font-weight:800;'
           + 'background:' + COLOURS[reg] + ';'
           + 'border-right:' + (c === n - 1 ? '0' : puzzle.region[i + 1] !== reg ? thick : thin) + ';'
           + 'border-bottom:' + (r === n - 1 ? '0' : puzzle.region[i + n] !== reg ? thick : thin) });
-        b.addEventListener('click', () => { state[i] = (state[i] + 1) % 3; api.sfx('tap'); draw(); check(); });
         cells.push(b); board.append(b);
       }
-      const prompt = el('div', { class: 'prompt', text: 'Tap: ✕ → 👑 → clear' });
+      const prompt = el('div', { class: 'prompt', text: 'Tap: ✕ → 👑 → clear · Drag to mark ✕' });
       const controls = el('div', { class: 'row-btns', style: 'max-width:420px;width:100%;margin:0 auto' }, [
         el('button', { class: 'btn secondary', text: 'Clear ✕ marks', onclick: () => { state.forEach((v, i) => { if (v === 1) state[i] = 0; }); draw(); } }),
         el('button', { class: 'btn secondary', text: 'Start again', onclick: () => { state.fill(0); draw(); } }),
       ]);
       api.root.append(prompt, board, controls);
+
+      // A tap cycles the square; a drag paints ✕ over empty squares (or rubs ✕ out if it
+      // started on one). Crowns are never touched by a drag.
+      board.style.touchAction = 'none';
+      let drag = null;
+      const at = (e) => {
+        const t = document.elementFromPoint(e.clientX, e.clientY);
+        const cell = t && t.closest && t.closest('[data-i]');
+        return cell && board.contains(cell) ? Number(cell.dataset.i) : null;
+      };
+      const paint = (i) => {
+        if (drag.mode === 'mark' && state[i] === 0) state[i] = 1;
+        else if (drag.mode === 'erase' && state[i] === 1) state[i] = 0;
+        else return;
+        draw();
+      };
+      board.addEventListener('pointerdown', (e) => {
+        const i = at(e);
+        if (i == null) return;
+        e.preventDefault();
+        drag = { start: i, mode: state[i] === 1 ? 'erase' : 'mark', moved: false };
+      });
+      const onMove = (e) => {
+        if (!drag) return;
+        const i = at(e);
+        if (i == null || (!drag.moved && i === drag.start)) return;
+        if (!drag.moved) { drag.moved = true; api.sfx('tap'); paint(drag.start); }
+        paint(i);
+      };
+      const onUp = () => {
+        if (!drag) return;
+        if (!drag.moved) { state[drag.start] = (state[drag.start] + 1) % 3; api.sfx('tap'); draw(); }
+        drag = null;
+        check();
+      };
+      const onCancel = () => { drag = null; };
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+      document.addEventListener('pointercancel', onCancel);
+      api.onCleanup(() => {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        document.removeEventListener('pointercancel', onCancel);
+      });
 
       function conflicts() {
         const bad = new Set();
